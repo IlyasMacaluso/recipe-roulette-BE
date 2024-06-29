@@ -9,8 +9,8 @@ const openai = new OpenAI({
 })
 
 const generateRecipe = async (req, res) => {
-    const { ingredients, prepTime, caloricApport, cuisineEthnicity } = req.body
-
+    const { ingredients, prepTime, caloricApport, cuisineEthnicity, preferences } = req.body
+    console.log(preferences, caloricApport, prepTime,cuisineEthnicity)
     if (!ingredients || !prepTime || !caloricApport || !cuisineEthnicity) {
         return res.status(400).json({ error: "Some required parameters are missing" })
     }
@@ -25,6 +25,7 @@ const generateRecipe = async (req, res) => {
                     -all of these ingredients: ${ingredients}, 
                     -a maximum preparation time of ${prepTime} minutes,
                     -with a meximum of ${caloricApport} calories,
+                    -follow thesere preferences ${preferences}
                     -each meals should be inspired by one of these cuisines ${cuisineEthnicity}. 
                     -assume that all ingredients are not cooked yet.
                     -The objects should have this props and format:
