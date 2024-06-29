@@ -49,7 +49,7 @@ const login = async (req, res) => {
         const { username, password } = req.body
         const user = await db.oneOrNone(`SELECT * FROM users WHERE username=$1`, [username])
 
-        if (user && user.password === password /* (await bcrypt.compare(password, user.password)) */) {
+        if (user &&  bcrypt.compare(password, user.password)) {
             const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
             await db.none(`UPDATE users SET token=$2 WHERE username=$1`, [username, token])
             res.status(200).json({ msg: "Logged in", id: user.id, username: user.username, token })
