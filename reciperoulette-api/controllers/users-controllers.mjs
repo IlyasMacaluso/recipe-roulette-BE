@@ -21,6 +21,7 @@ const signup = async (req, res) => {
         const { email, username, password } = req.body
         const emailExists = await db.oneOrNone(`SELECT email FROM users WHERE email=$1`, email)
         const usernameExists = await db.oneOrNone(`SELECT username FROM users WHERE username=$1`, username)
+        
         if (!emailExists && !usernameExists) {
             const hashedPassword = await bcrypt.hash(password, 10)
             //creo il nuovo utente utilizzando i dati ricevuti
@@ -32,8 +33,9 @@ const signup = async (req, res) => {
             //assegno una riga di preferences a questo utente e inizializzo le colonne JSON e INTEGER []
             await db.none(
                 `INSERT INTO preferences (user_id, blacklisted_ingredients, preferred_cuisines, dietary_preferences, recipes_history) VALUES ($1, $2, $3, $4, $5);`,
-                [id, [], [], {}, []]
+                [id, [], [], { isGlutenFree: false, isVegan: false, isVegetarian: false }, []]
             )
+            await db.none(`INSERT INTO favorited (user_id, favorite_recipes ) VALUES ($1, $2);`, [id, []])
             res.status(201).json({ id, msg: "User created successfully" })
         } else {
             res.status(400).json({ msg: "A user with this email or username already exists" })
