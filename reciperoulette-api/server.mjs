@@ -7,6 +7,7 @@ import {
     setPreferredCaloricApport,
     setPreferredPrepTime,
     setPreferences,
+    setPreferredCuisines,
 } from "./controllers/preferences-controller.mjs"
 import { authorize } from "./utils/authHelpers.mjs"
 import { passport } from "./passport.mjs"
@@ -31,7 +32,7 @@ app.get("/api/ingredients", getIngredients)
 app.post("/api/preferences/blacklisted-ingredients", blacklistIngredient)
 app.post("/api/preferences/set-prep-time", setPreferredPrepTime)
 app.post("/api/preferences/set-caloric-apport", setPreferredCaloricApport)
-app.post("/api/preferences/set-caloric-apport", )
+app.post("/api/preferences/set-set-preferred-cuisines", setPreferredCuisines)
 app.post("/api/preferences/set-preferences", setPreferences)
 
 //ai request route

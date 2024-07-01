@@ -128,4 +128,4 @@ const setPreferences = async (req, res) => {
     }
 }
 
-export { blacklistIngredient, setPreferredCaloricApport, setPreferredPrepTime, setPreferences }
+export { blacklistIngredient, setPreferredCaloricApport, setPreferredPrepTime, setPreferences, setPreferredCuisines }
