@@ -39,10 +39,10 @@ const blacklistIngredient = async (req, res) => {
             )
         }
 
-        res.status(200).json({ msg: "Blacklist updated" })
+        return res.status(200).json({ msg: "Blacklist updated" })
     } catch (error) {
         console.error("Error in blacklistIngredient:", error)
-        res.status(500).json({ msg: "Internal server error" })
+        return res.status(500).json({ msg: "Internal server error" })
     }
 }
 
@@ -55,15 +55,15 @@ const setPreferredPrepTime = async (req, res) => {
             return res.status(400).json({ msg: "Missing required parameters" })
         }
 
-        const { preferred_preparation_times } = await db.one(`UPDATE preferences SET preferred_preparation_times=$2 WHERE user_id=$1 RETURNING preferred_preparation_times`, [
-            userId,
-            prepTime,
-        ])
+        const { preferred_preparation_times } = await db.one(
+            `UPDATE preferences SET preferred_preparation_times=$2 WHERE user_id=$1 RETURNING preferred_preparation_times`,
+            [userId, prepTime]
+        )
 
-        res.status(200).json({ msg: "Preferences preferred_preparation_time updated", preferred_preparation_times })
+        return res.status(200).json({ msg: "Preferences preferred_preparation_time updated", preferred_preparation_times })
     } catch (error) {
         console.error("Error in blacklistIngredient:", error)
-        res.status(500).json({ msg: "Internal server error" })
+        return res.status(500).json({ msg: "Internal server error" })
     }
 }
 
@@ -81,11 +81,51 @@ const setPreferredCaloricApport = async (req, res) => {
             [userId, caloricApport]
         )
 
-        res.status(200).json({ msg: "Preferences preparation_time updated", preferred_caloric_apport })
+        return res.status(200).json({ msg: "Preferences preparation_time updated", preferred_caloric_apport })
     } catch (error) {
         console.error("Error in blacklistIngredient:", error)
-        res.status(500).json({ msg: "Internal server error" })
+        return res.status(500).json({ msg: "Internal server error" })
     }
 }
 
-export { blacklistIngredient, setPreferredCaloricApport, setPreferredPrepTime }
+const setPreferredCuisines = async () => {
+    try {
+        const cuisines = req.body
+        if (cuisines) {
+            const { preferred_cuisines } = await db.one(
+                `UPDATE preferences set preferred_cuisines=$2 where id=$1 RETURNING preferred_cuisines`,
+                [cuisines]
+            )
+            return res.status(200).json({ msg: "Preferences preparation_time updated", preferred_cuisines })
+        } else {
+            return res.status(400).json({ msg: "Missing required parameters" })
+        }
+    } catch (error) {
+        console.error("Error in blacklistIngredient:", error)
+        return res.status(500).json({ msg: "Internal server error" })
+    }
+}
+
+//unica functione che riceve le preferenze e le imposta
+
+const setPreferences = async (req, res) => {
+    try {
+        const { reqPreferences, userId } = req.body
+        console.log("preferences", reqPreferences)
+
+        if (reqPreferences && userId) {
+            const { preferences } = await db.one(`UPDATE preferences SET preferences=$2 WHERE user_id=$1 RETURNING preferences`, [
+                userId,
+                reqPreferences,
+            ])
+            return res.status(200).json({ msg: "Preferences updated successfully", preferences })
+        } else {
+            return res.status(400).json({ msg: "Missing required parameters" })
+        }
+    } catch (error) {
+        console.error("Error:", error)
+        return res.status(500).json({ msg: "Internal server error" })
+    }
+}
+
+export { blacklistIngredient, setPreferredCaloricApport, setPreferredPrepTime, setPreferences }

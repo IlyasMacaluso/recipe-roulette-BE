@@ -32,7 +32,7 @@ const generateRecipe = async (req, res) => {
                     -quantities should be for 4 servings,
                     -The objects should have this props and format:
                         {
-                            id: n, //randomly generated 8 digit number
+                            id: n, //8 digit number: MUST be RANDOMLY generated! 
                             title: "Greek Spanakopita (Spinach Pie)",
                             attributes: [ /*first latter upper case*/
                                 "Easy", // difficulty
