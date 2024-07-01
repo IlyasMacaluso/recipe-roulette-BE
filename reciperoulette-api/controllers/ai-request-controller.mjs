@@ -25,7 +25,7 @@ const generateRecipe = async (req, res) => {
                     -all of these ingredients: ${ingredients}, 
                     -a maximum preparation time of ${prepTime} minutes,
                     -with a meximum of ${caloricApport} calories,
-                    -follow thesere preferences ${preferences},
+                    -follow these preferences ${preferences},
                     -the max preparation difficulty level should be ${difficulty}
                     -each meals should be inspired by one of these cuisines ${cuisineEthnicity}. 
                     -assume that all ingredients are not cooked yet,
