@@ -9,9 +9,9 @@ const openai = new OpenAI({
 })
 
 const generateRecipe = async (req, res) => {
-    const { ingredients, prepTime, caloricApport, cuisineEthnicity, preferences } = req.body
-    console.log(preferences, caloricApport, prepTime,cuisineEthnicity)
-    if (!ingredients || !prepTime || !caloricApport || !cuisineEthnicity) {
+    const { ingredients, prepTime, caloricApport, cuisineEthnicity, preferences, difficulty } = req.body
+    console.log(preferences, caloricApport, prepTime,cuisineEthnicity, difficulty)
+    if (!ingredients || !prepTime || !caloricApport || !cuisineEthnicity || !difficulty) {
         return res.status(400).json({ error: "Some required parameters are missing" })
     }
 
@@ -25,18 +25,20 @@ const generateRecipe = async (req, res) => {
                     -all of these ingredients: ${ingredients}, 
                     -a maximum preparation time of ${prepTime} minutes,
                     -with a meximum of ${caloricApport} calories,
-                    -follow thesere preferences ${preferences}
+                    -follow thesere preferences ${preferences},
+                    -the max preparation difficulty level should be ${difficulty}
                     -each meals should be inspired by one of these cuisines ${cuisineEthnicity}. 
-                    -assume that all ingredients are not cooked yet.
+                    -assume that all ingredients are not cooked yet,
+                    -quantities should be for 4 servings,
                     -The objects should have this props and format:
                         {
                             id: n, //randomly generated 8 digit number
                             title: "Greek Spanakopita (Spinach Pie)",
-                            attributes: [
-                                "easy", // difficulty
-                                "appetizer", // type of dish
+                            attributes: [ /*first latter upper case*/
+                                "Easy", // difficulty
+                                "Appetizer", // type of dish
                                 "60m", //prep time
-                                "6 servings", // n of servings
+                                "4 servings", // n of servings
                             ],
                             ingredients: ["spinach", "onion" /*other ingredients...*/],
                             ingQuantities: [
@@ -56,6 +58,7 @@ const generateRecipe = async (req, res) => {
                             cuisineEthnicity: "Greek",
                             caloricApport: 280,
                             preparationTime: 60,
+                            difficulty: easy // hard /medium /easy
                         }
                     `,
                 },
