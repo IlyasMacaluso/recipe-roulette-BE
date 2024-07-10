@@ -20,13 +20,13 @@ const signup = async (req, res) => {
     try {
         const { email, username, password } = req.body
         const emailExists = await db.oneOrNone(`SELECT email FROM users WHERE email=$1`, email)
-        const usernameExists = await db.oneOrNone(`SELECT username FROM users WHERE username=$1`, username)
+        const usernameExists = await db.oneOrNone(`SELECT username FROM users WHERE username=$1`, username.toLowerCase())
         
         if (!emailExists && !usernameExists) {
             const hashedPassword = await bcrypt.hash(password, 10)
             //creo il nuovo utente utilizzando i dati ricevuti
             const { id } = await db.one(`INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id;`, [
-                username,
+                username.toLowerCase(),
                 email,
                 hashedPassword,
             ])
@@ -49,7 +49,7 @@ const signup = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { username, password } = req.body
-        const user = await db.oneOrNone(`SELECT * FROM users WHERE username=$1`, [username])
+        const user = await db.oneOrNone(`SELECT * FROM users WHERE username=$1`, [username.toLowerCase()])
 
         if (user &&  bcrypt.compare(password, user.password)) {
             const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
