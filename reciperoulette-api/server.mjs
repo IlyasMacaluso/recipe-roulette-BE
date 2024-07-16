@@ -2,22 +2,18 @@ import express from "express"
 import cors from "cors"
 import { getUsers, signup, login, logout } from "./controllers/users-controllers.mjs"
 import { getIngredients } from "./controllers/ingredients-controllers.mjs"
-import {
-    blacklistIngredient,
-    setPreferredCaloricApport,
-    setPreferredPrepTime,
-    setPreferences,
-    setPreferredCuisines,
-} from "./controllers/preferences-controller.mjs"
+import {  setPreferences, updateBlacklist } from "./controllers/preferences-controller.mjs"
 import { authorize } from "./utils/authHelpers.mjs"
 import { passport } from "./passport.mjs"
 import { generateRecipe } from "./controllers/ai-request-controller.mjs"
 
 const app = express()
+const port = process.env.PORT || 3000
 
 app.use(express.json())
 app.use(cors())
 app.use(passport.initialize())
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 //users routes
 app.get("/api/users", getUsers)
@@ -29,11 +25,9 @@ app.post("/api/users/logout", authorize, logout)
 app.get("/api/ingredients", getIngredients)
 
 //preferences routes
-app.post("/api/preferences/blacklisted-ingredients", blacklistIngredient)
-app.post("/api/preferences/set-prep-time", setPreferredPrepTime)
-app.post("/api/preferences/set-caloric-apport", setPreferredCaloricApport)
-app.post("/api/preferences/set-set-preferred-cuisines", setPreferredCuisines)
 app.post("/api/preferences/set-preferences", setPreferences)
+app.post("/api/preferences/set-blacklisted-ingredients", updateBlacklist)
+
 
 //ai request route
 app.post("/api/generate-recipes", generateRecipe)
@@ -47,5 +41,5 @@ app.use((err, res, next) => {
 })
 
 app.listen(3000, () => {
-    console.log(`Server running at http://localhost:3000`)
+    console.log(`Server running at http://localhost:${port}`)
 })

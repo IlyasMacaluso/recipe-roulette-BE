@@ -32,8 +32,8 @@ const signup = async (req, res) => {
             ])
             //assegno una riga di preferences, favorited, e inizializzo le colonne
             await db.none(
-                `INSERT INTO preferences (user_id, blacklisted_ingredients, preferred_cuisines, dietary_preferences, recipes_history) VALUES ($1, $2, $3, $4, $5);`,
-                [user.id, [], [], { isGlutenFree: false, isVegan: false, isVegetarian: false }, []]
+                `INSERT INTO preferences (user_id, blacklisted_ingredients, recipes_history) VALUES ($1, $2, json_build_array());`,
+                [user.id, []]
             )
             await db.none(`INSERT INTO favorited (user_id, favorite_recipes ) VALUES ($1, $2);`, [user.id, []])
 
@@ -66,7 +66,7 @@ const login = async (req, res) => {
             user = await db.oneOrNone(`SELECT * FROM users WHERE username=$1`, [username.toLowerCase()])
         }
 
-        if (user && await bcrypt.compare(password, user.password)) {
+        if (user && (await bcrypt.compare(password, user.password))) {
             const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
             await db.none(`UPDATE users SET token=$2 WHERE username=$1`, [username, token])
             res.status(200).json({ msg: "Logged in", id: user.id, username: user.username, email: user.email, token })
