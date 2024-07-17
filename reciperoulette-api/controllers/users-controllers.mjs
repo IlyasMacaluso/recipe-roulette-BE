@@ -32,8 +32,9 @@ const signup = async (req, res) => {
             ])
             //assegno una riga di preferences, favorited, e inizializzo le colonne
             await db.none(
-                `INSERT INTO preferences (user_id, blacklisted_ingredients, recipes_history) VALUES ($1, $2, json_build_array());`,
-                [user.id, []]
+                `INSERT INTO preferences (user_id, recipes_history, blacklisted_ingredients, favorited_recipes) 
+                VALUES ($1,json_build_array(), json_build_array(), json_build_array());`,
+                [user.id]
             )
             await db.none(`INSERT INTO favorited (user_id, favorite_recipes ) VALUES ($1, $2);`, [user.id, []])
 

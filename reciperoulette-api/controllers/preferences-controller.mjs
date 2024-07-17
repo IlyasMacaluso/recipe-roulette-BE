@@ -22,7 +22,7 @@ const updateBlacklist = async (req, res) => {
     }
 }
 
-const setPreferences = async (req, res) => {
+const updateFoodPref = async (req, res) => {
     try {
         const { newPreferences, userId } = req.body
 
@@ -41,4 +41,46 @@ const setPreferences = async (req, res) => {
     }
 }
 
-export { setPreferences, updateBlacklist }
+const updateFavoriteRecipes = async (req, res) => {
+    try {
+        console.log(req.body)
+        const { recipe, userId } = req.body
+
+        // Verifica che tutti i parametri necessari siano presenti
+        if (!userId || !recipe) {
+            return res.status(400).json({ msg: "Missing required parameters" })
+        }
+
+        // Controlla che l'utente esista nel database
+        const user = await db.oneOrNone(`SELECT * FROM users WHERE id=$1`, [userId])
+
+        if (!user) {
+            return res.status(400).json({ msg: "No such user" })
+        }
+
+        // Ottieni l'elenco delle ricette aggiunte ai preferiti dall'utente
+        const { favorited_recipes } = await db.oneOrNone(`SELECT favorited_recipes FROM preferences WHERE user_id=$1`, [userId])
+
+        if (recipe.isFavorited) {
+            const alreadyFavorited = favorited_recipes.find((rec) => rec.id + rec.title == recipe.id + rec.title)
+            console.log(!!alreadyFavorited);
+
+            if (!alreadyFavorited) {
+                //aggiungo se non è già nei preferiti
+                await db.none(`UPDATE preferences SET favorited_recipes = favorited_recipes || $2 WHERE user_id=$1`, [userId, recipe])
+            }
+        } else {
+            //se è nei preferiti la rimuovo
+            const newFavorited = favorited_recipes.filter((rec) => rec.id + rec.title !== recipe.id + recipe.title)
+            const jsonNewFavorited = JSON.stringify(newFavorited)
+            await db.none(`UPDATE preferences SET favorited_recipes = $2 WHERE user_id=$1`, [userId, jsonNewFavorited])
+        }
+        const newFavorited = await db.one("SELECT favorited_recipes FROM preferences WHERE user_id=$1", [userId])
+        return res.status(201).json({ msg: "Favorited updated", favorites: newFavorited })
+    } catch (error) {
+        console.error("Error in favorited_recipes:", error)
+        return res.status(500).json({ msg: "Internal server error" })
+    }
+}
+
+export { updateFoodPref, updateBlacklist, updateFavoriteRecipes }
