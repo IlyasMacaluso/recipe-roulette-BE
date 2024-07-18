@@ -1,8 +1,9 @@
 import express from "express"
 import cors from "cors"
+
 import { getUsers, signup, login, logout } from "./controllers/users-controllers.mjs"
 import { getIngredients } from "./controllers/ingredients-controllers.mjs"
-import {  updateFoodPref, updateBlacklist, updateFavoriteRecipes } from "./controllers/preferences-controller.mjs"
+import { updateFoodPref, updateBlacklist, updateFavoriteRecipes } from "./controllers/preferences-controller.mjs"
 import { authorize } from "./utils/authHelpers.mjs"
 import { passport } from "./passport.mjs"
 import { generateRecipe } from "./controllers/ai-request-controller.mjs"
@@ -13,7 +14,7 @@ const port = process.env.PORT || 3000
 app.use(express.json())
 app.use(cors())
 app.use(passport.initialize())
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
 //users routes
 app.get("/api/users", getUsers)
@@ -28,7 +29,6 @@ app.get("/api/ingredients", getIngredients)
 app.post("/api/preferences/set-preferences", updateFoodPref)
 app.post("/api/preferences/set-blacklisted-ingredients", updateBlacklist)
 app.post("/api/preferences/set-favorited-recipes", updateFavoriteRecipes)
-
 
 //ai request route
 app.post("/api/generate-recipes", generateRecipe)

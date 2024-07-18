@@ -59,24 +59,33 @@ const updateFavoriteRecipes = async (req, res) => {
         }
 
         // Ottieni l'elenco delle ricette aggiunte ai preferiti dall'utente
-        const { favorited_recipes } = await db.oneOrNone(`SELECT favorited_recipes FROM preferences WHERE user_id=$1`, [userId])
+        const { favorited_recipes } = (await db.oneOrNone(`SELECT favorited_recipes FROM preferences WHERE user_id=$1`, [userId])) || {
+            favorited_recipes: [],
+        }
+
+        let newFavorited
 
         if (recipe.isFavorited) {
-            const alreadyFavorited = favorited_recipes.find((rec) => rec.id + rec.title == recipe.id + rec.title)
-            console.log(!!alreadyFavorited);
+            // Controlla se la ricetta è già nei preferiti
+            const alreadyFavorited = favorited_recipes.find((rec) => String(rec.id) + rec.title === String(recipe.id) + rec.title)
 
             if (!alreadyFavorited) {
-                //aggiungo se non è già nei preferiti
-                await db.none(`UPDATE preferences SET favorited_recipes = favorited_recipes || $2 WHERE user_id=$1`, [userId, recipe])
+                newFavorited = [...favorited_recipes, recipe]
+            } else {
+                newFavorited = favorited_recipes
             }
         } else {
-            //se è nei preferiti la rimuovo
-            const newFavorited = favorited_recipes.filter((rec) => rec.id + rec.title !== recipe.id + recipe.title)
-            const jsonNewFavorited = JSON.stringify(newFavorited)
-            await db.none(`UPDATE preferences SET favorited_recipes = $2 WHERE user_id=$1`, [userId, jsonNewFavorited])
+            // Rimuovi la ricetta dai preferiti (usando solo l'id per il confronto)
+            newFavorited = favorited_recipes.filter((rec) => String(rec.id) + rec.title !== String(recipe.id) + rec.title)
         }
-        const newFavorited = await db.one("SELECT favorited_recipes FROM preferences WHERE user_id=$1", [userId])
-        return res.status(201).json({ msg: "Favorited updated", favorites: newFavorited })
+
+        // Serializza l'array aggiornato in JSON prima di passarlo alla query
+        const jsonNewFavorited = JSON.stringify(newFavorited)
+
+        // Esegui l'aggiornamento nel database
+        await db.none(`UPDATE preferences SET favorited_recipes = $2::jsonb WHERE user_id=$1`, [userId, jsonNewFavorited])
+
+        return res.status(201).json({ msg: "Favorited updated", newFavorited })
     } catch (error) {
         console.error("Error in favorited_recipes:", error)
         return res.status(500).json({ msg: "Internal server error" })

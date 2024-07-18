@@ -1,7 +1,8 @@
+import { db } from "../utils/DBhelpers.mjs"
+
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
 import bcrypt from "bcrypt"
-import { db } from "../utils/DBhelpers.mjs"
 
 dotenv.config()
 
