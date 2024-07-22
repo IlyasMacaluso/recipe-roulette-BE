@@ -71,7 +71,7 @@ const login = async (req, res) => {
         if (user && (await bcrypt.compare(password, user.password))) {
             const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
             await db.none(`UPDATE users SET token=$2 WHERE username=$1`, [username, token])
-            res.status(200).json({ msg: "Logged in", id: user.id, username: user.username, email: user.email, token })
+            res.status(201).json({ msg: "Logged in", id: user.id, username: user.username, email: user.email, token })
         } else {
             res.status(401).json({ msg: "Invalid credentials" })
         }
@@ -90,7 +90,7 @@ const logout = async (req, res) => {
         }
 
         await db.none(`UPDATE users SET token=$2 WHERE id=$1`, [user.id, null])
-        res.status(200).json({ msg: "User logged out" })
+        res.status(201).json({ msg: "User logged out" })
     } catch (error) {
         res.status(500).json({ msg: "Internal server error" })
     }
