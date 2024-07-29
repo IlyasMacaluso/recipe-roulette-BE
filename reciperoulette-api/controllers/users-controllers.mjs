@@ -24,13 +24,17 @@ const signup = async (req, res) => {
         const usernameExists = await db.oneOrNone(`SELECT username FROM users WHERE username=$1`, [username.toLowerCase()])
 
         if (!emailExists && !usernameExists) {
+
             const hashedPassword = await bcrypt.hash(password, 10)
+
             //creo il nuovo utente utilizzando i dati ricevuti
             const user = await db.one(`INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *;`, [
                 username.toLowerCase(),
                 email,
                 hashedPassword,
             ])
+
+
             //assegno una riga di preferences, favorited, e inizializzo le colonne
             await db.none(
                 `INSERT INTO preferences (user_id, recipes_history, blacklisted_ingredients, favorited_recipes) 
@@ -115,10 +119,6 @@ const changePassword = async (req, res) => {
         const isOldPasswordCorrect = await bcrypt.compare(oldPassword, user.password)
 
         if (isOldPasswordCorrect) {
-            if (newPassword.length < 8) {
-                return res.status(400).json({ msg: "Password must be at least 8 characters long" })
-            }
-    
             const hashedPassword = await bcrypt.hash(newPassword, 10)
             await db.none("UPDATE users SET password=$2 WHERE id=$1", [userId, hashedPassword]) // update pass
             return res.status(200).json({ msg: "Your password was successfully updated" })
