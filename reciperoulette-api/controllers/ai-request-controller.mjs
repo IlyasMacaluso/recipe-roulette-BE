@@ -85,7 +85,7 @@ const generateRecipe = async (req, res) => {
     });
     return res.json(completion.choices[0].message.content);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res
       .status(500)
       .json({ error: "An error occurred while processing your request" });

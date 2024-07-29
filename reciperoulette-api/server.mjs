@@ -1,7 +1,7 @@
 import express from "express"
 import cors from "cors"
 
-import { getUsers, signup, login, logout } from "./controllers/users-controllers.mjs"
+import { getUsers, signup, login, logout, changePassword } from "./controllers/users-controllers.mjs"
 import { getIngredients } from "./controllers/ingredients-controllers.mjs"
 import {
     getFoodPref,
@@ -30,6 +30,7 @@ app.get("/api/users", getUsers)
 app.post("/api/users/signup", signup)
 app.post("/api/users/login", login)
 app.post("/api/users/logout", authorize, logout)
+app.post("/api/users/change-password", authorize, changePassword)
 
 //ingredients routes
 app.get("/api/ingredients/get-ingredients", getIngredients)

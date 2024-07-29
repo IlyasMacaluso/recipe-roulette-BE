@@ -7,7 +7,7 @@ const getIngredients = async (req, res) => {
       ? res.status(200).json(ingredients)
       : res.status(400).json({ msg: "No ingredients found" });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ msg: "Internal server error" });
   }
 };

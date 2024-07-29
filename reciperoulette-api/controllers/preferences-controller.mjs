@@ -12,7 +12,7 @@ const getBlacklist = async (req, res) => {
 
         res.status(200).json(blacklisted_ingredients || [])
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ msg: "Internal server error" })
     }
 }
@@ -48,10 +48,9 @@ const getFoodPref = async (req, res) => {
 
         const { preferences } = await db.oneOrNone(`SELECT preferences FROM preferences WHERE user_id=$1`, [userId])
 
-        console.log(preferences)
         res.status(200).json(preferences)
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ msg: "Internal server error" })
     }
 }
@@ -79,18 +78,15 @@ const getFavoriteRecipes = async (req, res) => {
     try {
         const userId = req.params.userId
 
-        console.log(userId)
-
         if (!userId) {
             throw new Error("Missing required parameters")
         }
 
         const { favorited_recipes } = await db.oneOrNone(`SELECT favorited_recipes FROM preferences WHERE user_id=$1`, [userId])
 
-        console.log(favorited_recipes)
         res.status(200).json(favorited_recipes || [])
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ msg: "Internal server error" })
     }
 }
@@ -157,7 +153,7 @@ const getRecipesHistory = async (req, res) => {
 
         res.status(200).json(recipes_history || [])
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ msg: "Internal server error" })
     }
 }

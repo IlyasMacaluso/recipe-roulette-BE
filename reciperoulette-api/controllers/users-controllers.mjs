@@ -54,7 +54,7 @@ const signup = async (req, res) => {
             res.status(400).json({ msg: "A user with this email or username already exists" })
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ msg: "Internal server error" })
     }
 }
@@ -76,7 +76,7 @@ const login = async (req, res) => {
             res.status(401).json({ msg: "Invalid credentials" })
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
         res.status(500).json({ msg: error || "Internal server error" })
     }
 }
@@ -96,4 +96,39 @@ const logout = async (req, res) => {
     }
 }
 
-export { getUsers, signup, login, logout }
+const changePassword = async (req, res) => {
+    try {
+        const { userId, oldPassword, newPassword } = req.body
+
+        // checks for required parameters
+        if (!userId || !newPassword || !oldPassword) {
+            return res.status(400).json({ msg: "Missing required parameters" })
+        }
+
+        const user = await db.oneOrNone("SELECT * FROM users WHERE id=$1", [userId])
+
+        // checks that the user exists
+        if (!user) {
+            return res.status(400).json({ msg: "User not found" })
+        }
+
+        const isOldPasswordCorrect = await bcrypt.compare(oldPassword, user.password)
+
+        if (isOldPasswordCorrect) {
+            if (newPassword.length < 8) {
+                return res.status(400).json({ msg: "Password must be at least 8 characters long" })
+            }
+    
+            const hashedPassword = await bcrypt.hash(newPassword, 10)
+            await db.none("UPDATE users SET password=$2 WHERE id=$1", [userId, hashedPassword]) // update pass
+            return res.status(200).json({ msg: "Your password was successfully updated" })
+        } else {
+            return res.status(400).json({ msg: "Old password is incorrect, please retry" })
+        }
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ msg: error.message || "Internal server error" })
+    }
+}
+
+export { getUsers, signup, login, logout, changePassword }
