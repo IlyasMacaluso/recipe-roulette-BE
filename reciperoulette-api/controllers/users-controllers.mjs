@@ -24,7 +24,6 @@ const signup = async (req, res) => {
         const usernameExists = await db.oneOrNone(`SELECT username FROM users WHERE username=$1`, [username.toLowerCase()])
 
         if (!emailExists && !usernameExists) {
-
             const hashedPassword = await bcrypt.hash(password, 10)
 
             //creo il nuovo utente utilizzando i dati ricevuti
@@ -33,7 +32,6 @@ const signup = async (req, res) => {
                 email,
                 hashedPassword,
             ])
-
 
             //assegno una riga di preferences, favorited, e inizializzo le colonne
             await db.none(
@@ -47,11 +45,18 @@ const signup = async (req, res) => {
             const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
             await db.none(`UPDATE users SET token=$2 WHERE username=$1`, [username, token])
 
+            let base64Image
+
+            if (user.avatar) {
+                base64Image = user.avatar.toString("base64")
+            }
+
             res.status(201).json({
                 id: user.id,
                 username: user.username,
                 email: user.email,
                 token,
+                avatar: user?.avatar,
                 msg: "User created successfully",
             })
         } else {
@@ -75,7 +80,14 @@ const login = async (req, res) => {
         if (user && (await bcrypt.compare(password, user.password))) {
             const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
             await db.none(`UPDATE users SET token=$2 WHERE username=$1`, [username, token])
-            res.status(201).json({ msg: "Logged in", id: user.id, username: user.username, email: user.email, token })
+            
+            let base64Image
+
+            if (user.avatar) {
+                base64Image = user.avatar.toString("base64")
+            }
+
+            res.status(201).json({ msg: "Logged in", id: user.id, username: user.username, email: user.email, token, avatar: base64Image })
         } else {
             res.status(401).json({ msg: "Invalid credentials" })
         }
@@ -131,4 +143,25 @@ const changePassword = async (req, res) => {
     }
 }
 
-export { getUsers, signup, login, logout, changePassword }
+const updateAvatar = async (req, res) => {
+    try {
+        const { userId, avatar } = req.body
+
+        if (!userId || !avatar) {
+            return res.status(400).json({ msg: "Missing required parameters" })
+        }
+
+        // Decodifica la stringa base64
+        const buffer = Buffer.from(avatar, "base64")
+
+        // Aggiorna il database
+        await db.none("UPDATE users SET avatar = $2 WHERE id = $1", [userId, buffer])
+
+        return res.status(201).json({ msg: "Avatar updated successfully" })
+    } catch (error) {
+        console.error("Error updating avatar:", error)
+        return res.status(500).json({ msg: "Internal server error" })
+    }
+}
+
+export { getUsers, signup, login, logout, changePassword, updateAvatar }

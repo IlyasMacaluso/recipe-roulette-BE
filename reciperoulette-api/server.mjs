@@ -1,7 +1,8 @@
 import express from "express"
 import cors from "cors"
+import bodyParser from "body-parser"
 
-import { getUsers, signup, login, logout, changePassword } from "./controllers/users-controllers.mjs"
+import { getUsers, signup, login, logout, changePassword, updateAvatar } from "./controllers/users-controllers.mjs"
 import { getIngredients } from "./controllers/ingredients-controllers.mjs"
 import {
     getFoodPref,
@@ -20,10 +21,17 @@ import { generateRecipe } from "./controllers/ai-request-controller.mjs"
 const app = express()
 const port = process.env.PORT || 3000
 
-app.use(express.json())
-app.use(cors())
+app.use(
+    cors({
+        origin: "http://localhost:5173", // Permette solo questa origine
+        methods: ["GET", "POST", "PUT", "DELETE"], // Permette solo questi metodi
+        allowedHeaders: ["Content-Type", "Authorization"], // Permette solo questi headers
+    })
+)
+app.use(express.json({ limit: '10mb' })); // Configura il limite per JSON
 app.use(passport.initialize())
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
+app.use(bodyParser.json({ limit: "10mb" }))
 
 //users routes
 app.get("/api/users", getUsers)
@@ -31,6 +39,7 @@ app.post("/api/users/signup", signup)
 app.post("/api/users/login", login)
 app.post("/api/users/logout", authorize, logout)
 app.post("/api/users/change-password", authorize, changePassword)
+app.post("/api/users/change-avatar", updateAvatar)
 
 //ingredients routes
 app.get("/api/ingredients/get-ingredients", getIngredients)
