@@ -116,7 +116,7 @@ const updateFavoriteRecipes = async (req, res) => {
 
         if (recipe.isFavorited) {
             // Controlla se la ricetta è già nei preferiti
-            const alreadyFavorited = favorited_recipes.find((rec) => String(rec.id) + rec.title === String(recipe.id) + rec.title)
+            const alreadyFavorited = favorited_recipes.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
 
             if (!alreadyFavorited) {
                 newFavorited = [...favorited_recipes, recipe]
@@ -125,7 +125,7 @@ const updateFavoriteRecipes = async (req, res) => {
             }
         } else {
             // Rimuovi la ricetta dai preferiti (usando solo l'id per il confronto)
-            newFavorited = favorited_recipes.filter((rec) => String(rec.id) + rec.title !== String(recipe.id) + rec.title)
+            newFavorited = favorited_recipes.filter((rec) => `${rec.id}_${rec.title}` !== `${recipe.id}_${recipe.title}`)
         }
 
         // Serializza l'array aggiornato in JSON prima di passarlo alla query
@@ -180,16 +180,24 @@ const updateRecipesHistory = async (req, res) => {
         }
 
         // Controlla se la ricetta è già nella cronologia
-        const alreadyInHistory = recipes_history.find((rec) => String(rec.id) + rec.title === String(recipe.id) + recipe.title)
+        const alreadyInHistory = recipes_history.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
+        const isFavoritedUpdate = alreadyInHistory?.isFavorited !== recipe.isFavorited
 
         let newHistory // inizializzo una variabile in cui salvare i nuovi dati
 
         if (!alreadyInHistory) {
             newHistory = [recipe, ...recipes_history]
         } else {
-            //se è già nella cronologia la spostiamo in cima (la rimuoviamo e poi la riaggiungiamo all'inizio dell array)
-            newHistory = recipes_history.filter((rec) => String(rec.id) + rec.title !== String(recipe.id) + recipe.title)
-            newHistory = [recipe, ...newHistory]
+            if (isFavoritedUpdate) {
+                //se è gia nella cronologia, ma è solo stata modificata la prop isFavorited, aggiorniamo la cronologia senza spostarla in cima
+                newHistory = recipes_history.map((rec) =>
+                    `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}` ? { ...rec, isFavorited: recipe.isFavorited } : rec
+                )
+            } else {
+                //se è già nella cronologia ed è stata ri aperta, la spostiamo in cima (la rimuoviamo e poi la riaggiungiamo all'inizio dell array)
+                newHistory = recipes_history.filter((rec) => `${rec.id}_${rec.title}` !== `${recipe.id}_${recipe.title}`)
+                newHistory = [recipe, ...newHistory]
+            }
         }
 
         // Serializza l'array aggiornato in JSON prima di passarlo alla query
