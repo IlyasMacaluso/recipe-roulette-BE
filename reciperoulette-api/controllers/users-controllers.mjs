@@ -80,7 +80,7 @@ const login = async (req, res) => {
         if (user && (await bcrypt.compare(password, user.password))) {
             const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
             await db.none(`UPDATE users SET token=$2 WHERE username=$1`, [username, token])
-            
+
             let base64Image
 
             if (user.avatar) {
@@ -122,21 +122,27 @@ const changePassword = async (req, res) => {
         }
 
         const user = await db.oneOrNone("SELECT * FROM users WHERE id=$1", [userId])
-
         // checks that the user exists
         if (!user) {
             return res.status(400).json({ msg: "User not found" })
         }
 
         const isOldPasswordCorrect = await bcrypt.compare(oldPassword, user.password)
-
-        if (isOldPasswordCorrect) {
-            const hashedPassword = await bcrypt.hash(newPassword, 10)
-            await db.none("UPDATE users SET password=$2 WHERE id=$1", [userId, hashedPassword]) // update pass
-            return res.status(200).json({ msg: "Your password was successfully updated" })
-        } else {
-            return res.status(400).json({ msg: "Old password is incorrect, please retry" })
+        //checks that the oldPassword is correct before updating
+        if (!isOldPasswordCorrect) {
+            return res.status(403).json({ msg: "Old password is incorrect, please retry" })
         }
+
+        const isNewPasswordDifferent = await bcrypt.compare(oldPassword, newPassword)
+        //checks that the new and old passwords are different
+        if (!isNewPasswordDifferent) {
+            return res.status(409).json({ msg: "The new password must be different from the previous one" })
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        await db.none("UPDATE users SET password=$2 WHERE id=$1", [userId, hashedPassword]) // update pass
+        return res.status(201).json({ msg: "Your password was successfully updated" })
+
     } catch (error) {
         console.error(error)
         return res.status(500).json({ msg: error.message || "Internal server error" })
