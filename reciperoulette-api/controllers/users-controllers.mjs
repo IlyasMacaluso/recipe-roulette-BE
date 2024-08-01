@@ -142,32 +142,43 @@ const changePassword = async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, 10)
         await db.none("UPDATE users SET password=$2 WHERE id=$1", [userId, hashedPassword]) // update pass
         return res.status(201).json({ msg: "Your password was successfully updated" })
-
     } catch (error) {
         console.error(error)
         return res.status(500).json({ msg: error.message || "Internal server error" })
     }
 }
 
-const updateAvatar = async (req, res) => {
+const updateUserData = async (req, res) => {
     try {
-        const { userId, avatar } = req.body
+        const { userId, newAvatar, newPassword, newEmail, newUsername } = req.body
 
-        if (!userId || !avatar) {
+        if (!userId || (!newAvatar && !newPassword && !newEmail && !newUsername)) {
             return res.status(400).json({ msg: "Missing required parameters" })
         }
 
-        // Decodifica la stringa base64
-        const buffer = Buffer.from(avatar, "base64")
+        if (newAvatar) {
+            // Decodifica la stringa base64
+            const avatarBuffer = Buffer.from(newAvatar, "base64")
+            await db.none("UPDATE users SET avatar = $2 WHERE id = $1", [userId, avatarBuffer])
+        }
 
-        // Aggiorna il database
-        await db.none("UPDATE users SET avatar = $2 WHERE id = $1", [userId, buffer])
+        if (newPassword) {
+            await db.none("UPDATE users SET password = $2 WHERE id = $1", [userId, newPassword])
+        }
 
-        return res.status(201).json({ msg: "Avatar updated successfully" })
+        if (newUsername) {
+            await db.none("UPDATE users SET username = $2 WHERE id = $1", [userId, newUsername])
+        }
+
+        if (newEmail) {
+            await db.none("UPDATE users SET email = $2 WHERE id = $1", [userId, newEmail])
+        }
+
+        return res.status(201).json({ msg: "User data updated successfully" })
     } catch (error) {
-        console.error("Error updating avatar:", error)
+        console.error("Error updating user data:", error)
         return res.status(500).json({ msg: "Internal server error" })
     }
 }
 
-export { getUsers, signup, login, logout, changePassword, updateAvatar }
+export { getUsers, signup, login, logout, changePassword, updateUserData }

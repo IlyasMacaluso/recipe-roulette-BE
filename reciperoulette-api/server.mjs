@@ -2,7 +2,7 @@ import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
 
-import { getUsers, signup, login, logout, changePassword, updateAvatar } from "./controllers/users-controllers.mjs"
+import { getUsers, signup, login, logout, changePassword, updateUserData } from "./controllers/users-controllers.mjs"
 import { getIngredients } from "./controllers/ingredients-controllers.mjs"
 import {
     getFoodPref,
@@ -39,7 +39,7 @@ app.post("/api/users/signup", signup)
 app.post("/api/users/login", login)
 app.post("/api/users/logout", authorize, logout)
 app.post("/api/users/change-password", authorize, changePassword)
-app.post("/api/users/change-avatar", updateAvatar)
+app.post("/api/users/change-user-data", authorize, updateUserData)
 
 //ingredients routes
 app.get("/api/ingredients/get-ingredients", getIngredients)
