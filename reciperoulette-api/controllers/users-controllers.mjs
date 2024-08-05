@@ -150,10 +150,17 @@ const changePassword = async (req, res) => {
 
 const updateUserData = async (req, res) => {
     try {
-        const { userId, newAvatar, newPassword, newEmail, newUsername } = req.body
+        const { userId, newAvatar, oldPassword, newPassword, newEmail, newUsername } = req.body
+        console.log(userId, newAvatar, oldPassword, newPassword, newEmail, newUsername)
 
         if (!userId || (!newAvatar && !newPassword && !newEmail && !newUsername)) {
             return res.status(400).json({ msg: "Missing required parameters" })
+        }
+
+        const user = await db.oneOrNone("SELECT * FROM users WHERE id=$1", [userId])
+
+        if (!user) {
+            return res.status(400).json({ msg: "User not found" })
         }
 
         if (newAvatar) {
@@ -163,7 +170,14 @@ const updateUserData = async (req, res) => {
         }
 
         if (newPassword) {
-            await db.none("UPDATE users SET password = $2 WHERE id = $1", [userId, newPassword])
+            const oldPWCorrect = await bcrypt.compare(oldPassword, user.password)
+
+            if (!oldPassword || !oldPWCorrect) {
+                return res.status(400).json({ msg: "The old password is incorrect" })
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10)
+            await db.none("UPDATE users SET password = $2 WHERE id = $1", [userId, hashedPassword])
         }
 
         if (newUsername) {
