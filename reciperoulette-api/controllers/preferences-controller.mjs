@@ -113,18 +113,17 @@ const updateFavoriteRecipes = async (req, res) => {
         }
 
         let newFavorited
+        // Controlla se la ricetta è già nei preferiti
+        const alreadyFavorited = favorited_recipes.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
 
         if (recipe.isFavorited) {
-            // Controlla se la ricetta è già nei preferiti
-            const alreadyFavorited = favorited_recipes.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
-
             if (!alreadyFavorited) {
                 newFavorited = [...favorited_recipes, recipe]
             } else {
                 newFavorited = favorited_recipes
             }
         } else {
-            // Rimuovi la ricetta dai preferiti (usando solo l'id per il confronto)
+            // Rimuovi la ricetta dai preferiti
             newFavorited = favorited_recipes.filter((rec) => `${rec.id}_${rec.title}` !== `${recipe.id}_${recipe.title}`)
         }
 
@@ -181,13 +180,15 @@ const updateRecipesHistory = async (req, res) => {
 
         // Controlla se la ricetta è già nella cronologia
         const alreadyInHistory = recipes_history.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
-        const isFavoritedUpdate = alreadyInHistory?.isFavorited !== recipe.isFavorited
 
         let newHistory // inizializzo una variabile in cui salvare i nuovi dati
+        let isFavoritedUpdate = false
 
         if (!alreadyInHistory) {
             newHistory = [recipe, ...recipes_history]
         } else {
+            isFavoritedUpdate = alreadyInHistory.isFavorited !== recipe.isFavorited
+
             if (isFavoritedUpdate) {
                 //se è gia nella cronologia, ma è solo stata modificata la prop isFavorited, aggiorniamo la cronologia senza spostarla in cima
                 newHistory = recipes_history.map((rec) =>
