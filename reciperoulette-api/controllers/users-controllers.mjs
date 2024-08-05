@@ -151,7 +151,6 @@ const changePassword = async (req, res) => {
 const updateUserData = async (req, res) => {
     try {
         const { userId, newAvatar, oldPassword, newPassword, newEmail, newUsername } = req.body
-        console.log(userId, newAvatar, oldPassword, newPassword, newEmail, newUsername)
 
         if (!userId || (!newAvatar && !newPassword && !newEmail && !newUsername)) {
             return res.status(400).json({ msg: "Missing required parameters" })
