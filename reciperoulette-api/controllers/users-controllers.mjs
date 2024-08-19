@@ -95,7 +95,7 @@ const login = async (req, res) => {
         }
 
         if (user && (await bcrypt.compare(password, user.password))) {
-            const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "1m" })
+            const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
             await db.none(`UPDATE users SET token=$2 WHERE username=$1`, [username, token])
 
             let base64Image
