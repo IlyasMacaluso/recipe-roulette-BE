@@ -17,6 +17,23 @@ const getUsers = async (req, res) => {
     }
 }
 
+const verifyToken = (req, res) => {
+    try {
+        const { user } = req.body
+        console.log("user:", user)
+
+        if (!user?.token) {
+            return res.status(400).json({ msg: "Token missing" })
+        }
+
+        const decoded = jwt.verify(user.token, secretKey)
+        res.status(201).json({ msg: "Valid token", token: decoded }) // Token valido
+    } catch (err) {
+        console.log(err)
+        res.status(401).json({ msg: `Error while valdiating token: ${err.message}`, token: null }) // Token valido
+    }
+}
+
 const signup = async (req, res) => {
     try {
         const { email, username, password } = req.body
@@ -78,7 +95,7 @@ const login = async (req, res) => {
         }
 
         if (user && (await bcrypt.compare(password, user.password))) {
-            const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
+            const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "1m" })
             await db.none(`UPDATE users SET token=$2 WHERE username=$1`, [username, token])
 
             let base64Image
@@ -194,4 +211,4 @@ const updateUserData = async (req, res) => {
     }
 }
 
-export { getUsers, signup, login, logout, changePassword, updateUserData }
+export { getUsers, signup, login, logout, changePassword, updateUserData, verifyToken }

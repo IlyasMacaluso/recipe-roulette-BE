@@ -95,45 +95,38 @@ const updateFavoriteRecipes = async (req, res) => {
     try {
         const { recipe, userId } = req.body
 
-        // Verifica che tutti i parametri necessari siano presenti
         if (!userId || !recipe) {
             return res.status(400).json({ msg: "Missing required parameters" })
         }
 
-        // Controlla che l'utente esista nel database
         const user = await db.oneOrNone(`SELECT * FROM users WHERE id=$1`, [userId])
-
         if (!user) {
             return res.status(400).json({ msg: "No such user" })
         }
 
-        // Ottieni l'elenco delle ricette aggiunte ai preferiti dall'utente
-        const { favorited_recipes } = (await db.oneOrNone(`SELECT favorited_recipes FROM preferences WHERE user_id=$1`, [userId])) || {
-            favorited_recipes: [],
-        }
+        await db.tx(async (t) => {
+            const result = await t.oneOrNone(`SELECT favorited_recipes FROM preferences WHERE user_id=$1 FOR UPDATE`, [userId])
 
-        let newFavorited
-        // Controlla se la ricetta è già nei preferiti
-        const alreadyFavorited = favorited_recipes.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
+            let { favorited_recipes } = result || { favorited_recipes: [] }
+            const alreadyFavorited = favorited_recipes.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
 
-        if (recipe.isFavorited) {
-            if (!alreadyFavorited) {
-                newFavorited = [...favorited_recipes, recipe]
+            let newFavorited
+
+            if (recipe.isFavorited) {
+                if (!alreadyFavorited) {
+                    newFavorited = [...favorited_recipes, recipe]
+                } else {
+                    newFavorited = favorited_recipes
+                }
             } else {
-                newFavorited = favorited_recipes
+                newFavorited = favorited_recipes.filter((rec) => `${rec.id}_${rec.title}` !== `${recipe.id}_${recipe.title}`)
             }
-        } else {
-            // Rimuovi la ricetta dai preferiti
-            newFavorited = favorited_recipes.filter((rec) => `${rec.id}_${rec.title}` !== `${recipe.id}_${recipe.title}`)
-        }
 
-        // Serializza l'array aggiornato in JSON prima di passarlo alla query
-        const jsonNewFavorited = JSON.stringify(newFavorited)
+            const jsonNewFavorited = JSON.stringify(newFavorited)
+            await t.none(`UPDATE preferences SET favorited_recipes = $2::jsonb WHERE user_id=$1`, [userId, jsonNewFavorited])
+        })
 
-        // Esegui l'aggiornamento nel database
-        await db.none(`UPDATE preferences SET favorited_recipes = $2::jsonb WHERE user_id=$1`, [userId, jsonNewFavorited])
-
-        return res.status(201).json({ msg: "Favorited updated", newFavorited })
+        return res.status(201).json({ msg: "Favorited updated" })
     } catch (error) {
         console.error("Error in favorited_recipes:", error)
         return res.status(500).json({ msg: "Internal server error" })
@@ -161,53 +154,40 @@ const updateRecipesHistory = async (req, res) => {
     try {
         const { recipe, userId } = req.body
 
-        // Verifica che tutti i parametri necessari siano presenti
         if (!userId || !recipe) {
             return res.status(400).json({ msg: "Missing required parameters" })
         }
 
-        // Controlla che l'utente esista nel database
         const user = await db.oneOrNone(`SELECT * FROM users WHERE id=$1`, [userId])
-
         if (!user) {
-            return res.status(400).json({ msg: "No such user" })
+            return res.status(400).json({ msg: "User not found" })
         }
 
-        // Ottieni la cronologia dall'utente
-        const { recipes_history } = (await db.oneOrNone(`SELECT recipes_history FROM preferences WHERE user_id=$1`, [userId])) || {
-            recipes_history: [],
-        }
+        await db.tx(async (t) => {
+            const result = await t.oneOrNone(`SELECT recipes_history FROM preferences WHERE user_id=$1 FOR UPDATE`, [userId])
 
-        // Controlla se la ricetta è già nella cronologia
-        const alreadyInHistory = recipes_history.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
+            let { recipes_history } = result || { recipes_history: [] }
+            const alreadyInHistory = recipes_history.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
 
-        let newHistory // inizializzo una variabile in cui salvare i nuovi dati
-        let isFavoritedUpdate = false
-
-        if (!alreadyInHistory) {
-            newHistory = [recipe, ...recipes_history]
-        } else {
-            isFavoritedUpdate = alreadyInHistory.isFavorited !== recipe.isFavorited
-
-            if (isFavoritedUpdate) {
-                //se è gia nella cronologia, ma è solo stata modificata la prop isFavorited, aggiorniamo la cronologia senza spostarla in cima
-                newHistory = recipes_history.map((rec) =>
-                    `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}` ? { ...rec, isFavorited: recipe.isFavorited } : rec
-                )
+            let newHistory
+            if (!alreadyInHistory) {
+                newHistory = [recipe, ...recipes_history]
             } else {
-                //se è già nella cronologia ed è stata ri aperta, la spostiamo in cima (la rimuoviamo e poi la riaggiungiamo all'inizio dell array)
-                newHistory = recipes_history.filter((rec) => `${rec.id}_${rec.title}` !== `${recipe.id}_${recipe.title}`)
-                newHistory = [recipe, ...newHistory]
+                if (alreadyInHistory.isFavorited !== recipe.isFavorited) {
+                    newHistory = recipes_history.map((rec) =>
+                        `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}` ? { ...rec, isFavorited: recipe.isFavorited } : rec
+                    )
+                } else {
+                    newHistory = recipes_history.filter((rec) => `${rec.id}_${rec.title}` !== `${recipe.id}_${recipe.title}`)
+                    newHistory = [recipe, ...newHistory]
+                }
             }
-        }
 
-        // Serializza l'array aggiornato in JSON prima di passarlo alla query
-        const jsonNewHistory = JSON.stringify(newHistory)
+            const jsonNewHistory = JSON.stringify(newHistory)
+            await t.none(`UPDATE preferences SET recipes_history = $2::jsonb WHERE user_id=$1`, [userId, jsonNewHistory])
+        })
 
-        // Esegui l'aggiornamento nel database
-        await db.none(`UPDATE preferences SET recipes_history = $2::jsonb WHERE user_id=$1`, [userId, jsonNewHistory])
-
-        return res.status(201).json({ msg: "History updated", newHistory })
+        return res.status(201).json({ msg: "History updated" })
     } catch (error) {
         console.error("Error in favorited_recipes:", error)
         return res.status(500).json({ msg: "Internal server error" })

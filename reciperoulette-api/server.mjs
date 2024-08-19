@@ -2,7 +2,7 @@ import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
 
-import { getUsers, signup, login, logout, changePassword, updateUserData } from "./controllers/users-controllers.mjs"
+import { getUsers, signup, login, logout, changePassword, updateUserData, verifyToken } from "./controllers/users-controllers.mjs"
 import { getIngredients } from "./controllers/ingredients-controllers.mjs"
 import {
     getFoodPref,
@@ -35,6 +35,8 @@ app.use(bodyParser.json({ limit: "10mb" }))
 
 //users routes
 app.get("/api/users", getUsers)
+
+app.post("/api/users/verify-token", verifyToken)
 app.post("/api/users/signup", signup)
 app.post("/api/users/login", login)
 app.post("/api/users/logout", authorize, logout)
@@ -45,6 +47,7 @@ app.post("/api/users/change-user-data", authorize, updateUserData)
 app.get("/api/ingredients/get-ingredients", getIngredients)
 
 //preferences routes
+
 app.get("/api/preferences/get-preferences/:userId", getFoodPref)
 app.post("/api/preferences/set-preferences", updateFoodPref)
 
@@ -62,6 +65,7 @@ app.post("/api/generate-recipes", generateRecipe)
 
 app.use((err, res, next) => {
     if (err) {
+        console.log(err);
         res.status(err.statusCode || 500).json({ msg: err.statusMessage || "Internal Server Error" })
     } else {
         next()
