@@ -99,16 +99,17 @@ const updateFavoriteRecipes = async (req, res) => {
             return res.status(400).json({ msg: "Missing required parameters" })
         }
 
-        const user = await db.oneOrNone(`SELECT * FROM users WHERE id=$1`, [userId])
+        const user = await db.oneOrNone(`SELECT username FROM users WHERE id=$1`, [userId])
         if (!user) {
             return res.status(400).json({ msg: "No such user" })
         }
 
+        
         await db.tx(async (t) => {
             const result = await t.oneOrNone(`SELECT favorited_recipes FROM preferences WHERE user_id=$1 FOR UPDATE`, [userId])
 
             let { favorited_recipes } = result || { favorited_recipes: [] }
-            const alreadyFavorited = favorited_recipes.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
+            const alreadyFavorited = favorited_recipes.some((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
 
             let newFavorited
 
@@ -158,7 +159,7 @@ const updateRecipesHistory = async (req, res) => {
             return res.status(400).json({ msg: "Missing required parameters" })
         }
 
-        const user = await db.oneOrNone(`SELECT * FROM users WHERE id=$1`, [userId])
+        const user = await db.oneOrNone(`SELECT username FROM users WHERE id=$1`, [userId])
         if (!user) {
             return res.status(400).json({ msg: "User not found" })
         }
@@ -167,7 +168,7 @@ const updateRecipesHistory = async (req, res) => {
             const result = await t.oneOrNone(`SELECT recipes_history FROM preferences WHERE user_id=$1 FOR UPDATE`, [userId])
 
             let { recipes_history } = result || { recipes_history: [] }
-            const alreadyInHistory = recipes_history.find((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
+            const alreadyInHistory = recipes_history.some((rec) => `${rec.id}_${rec.title}` === `${recipe.id}_${recipe.title}`)
 
             let newHistory
             if (!alreadyInHistory) {

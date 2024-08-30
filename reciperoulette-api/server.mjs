@@ -2,8 +2,12 @@ import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
 
+import { authorize } from "./utils/authHelpers.mjs"
+import { passport } from "./passport.mjs"
+import compression from 'compression';
 import { getUsers, signup, login, logout, changePassword, updateUserData, verifyToken } from "./controllers/users-controllers.mjs"
 import { getIngredients } from "./controllers/ingredients-controllers.mjs"
+import { generateRecipe } from "./controllers/ai-request-controller.mjs"
 import {
     getFoodPref,
     updateFoodPref,
@@ -14,9 +18,6 @@ import {
     getRecipesHistory,
     updateRecipesHistory,
 } from "./controllers/preferences-controller.mjs"
-import { authorize } from "./utils/authHelpers.mjs"
-import { passport } from "./passport.mjs"
-import { generateRecipe } from "./controllers/ai-request-controller.mjs"
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -28,10 +29,11 @@ app.use(
         allowedHeaders: ["Content-Type", "Authorization"], // Permette solo questi headers
     })
 )
-app.use(express.json({ limit: '10mb' })); // Configura il limite per JSON
+app.use(express.json({ limit: "10mb" })) // Configura il limite per JSON
 app.use(passport.initialize())
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 app.use(bodyParser.json({ limit: "10mb" }))
+app.use(compression({ threshold: 1000 }));
 
 //users routes
 app.get("/api/users", getUsers)
@@ -65,7 +67,7 @@ app.post("/api/generate-recipes", generateRecipe)
 
 app.use((err, res, next) => {
     if (err) {
-        console.log(err);
+        console.log(err)
         res.status(err.statusCode || 500).json({ msg: err.statusMessage || "Internal Server Error" })
     } else {
         next()
