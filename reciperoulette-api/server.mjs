@@ -4,10 +4,22 @@ import bodyParser from "body-parser"
 
 import { authorize } from "./utils/authHelpers.mjs"
 import { passport } from "./passport.mjs"
-import compression from 'compression';
-import { getUsers, signup, login, logout, changePassword, updateUserData, verifyToken } from "./controllers/users-controllers.mjs"
+import compression from "compression"
+
 import { getIngredients } from "./controllers/ingredients-controllers.mjs"
 import { generateRecipe } from "./controllers/ai-request-controller.mjs"
+
+import {
+    getUser,
+    signup,
+    login,
+    logout,
+    changePassword,
+    updateUserData,
+    verifyToken,
+    verifyEmail,
+} from "./controllers/users-controllers.mjs"
+
 import {
     getFoodPref,
     updateFoodPref,
@@ -33,10 +45,11 @@ app.use(express.json({ limit: "10mb" })) // Configura il limite per JSON
 app.use(passport.initialize())
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 app.use(bodyParser.json({ limit: "10mb" }))
-app.use(compression({ threshold: 1000 }));
+app.use(compression({ threshold: 1000 }))
 
 //users routes
-app.get("/api/users", getUsers)
+app.get("/api/users/get-user/:userId", getUser)
+app.get("/api/users/verify-email", authorize, verifyEmail)
 
 app.post("/api/users/verify-token", verifyToken)
 app.post("/api/users/signup", signup)
@@ -65,14 +78,14 @@ app.post("/api/preferences/update-recipes-history", updateRecipesHistory)
 //ai request route
 app.post("/api/generate-recipes", generateRecipe)
 
-app.use((err, res, next) => {
-    if (err) {
-        console.log(err)
-        res.status(err.statusCode || 500).json({ msg: err.statusMessage || "Internal Server Error" })
-    } else {
-        next()
-    }
-})
+// app.use((err, res, next) => {
+//     if (err) {
+//         console.log(err)
+//         res.status(err.statusCode || 500).json({ msg: err.statusMessage || "Internal Server Error" })
+//     } else {
+//         next()
+//     }
+// })
 
 app.listen(3000, () => {
     console.log(`Server running at http://localhost:${port}`)
