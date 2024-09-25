@@ -18,6 +18,8 @@ import {
     updateUserData,
     verifyToken,
     verifyEmail,
+    resetPassword,
+    forgotPassword
 } from "./controllers/users-controllers.mjs"
 
 import {
@@ -50,6 +52,9 @@ app.use(compression({ threshold: 1000 }))
 //users routes
 app.get("/api/users/get-user/:userId", getUser)
 app.get("/api/users/verify-email", authorize, verifyEmail)
+
+app.post("/api/users/forgot-password", forgotPassword)
+app.post("/api/users/reset-password", authorize, resetPassword)
 
 app.post("/api/users/verify-token", verifyToken)
 app.post("/api/users/signup", signup)

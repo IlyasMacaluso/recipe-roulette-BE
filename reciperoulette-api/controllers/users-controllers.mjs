@@ -25,7 +25,7 @@ const getUser = async (req, res) => {
         if (!userId) {
             return res.status(400).json({ msg: "Id is required" }) // Usa 404 per utente non trovato
         }
-        
+
         const user = await db.oneOrNone(`SELECT username, email, token, is_verified FROM users WHERE id=$1`, [userId])
 
         if (!user) {
@@ -169,14 +169,15 @@ const logout = async (req, res) => {
 
 const changePassword = async (req, res) => {
     try {
-        const { userId, oldPassword, newPassword } = req.body
+        const userId = req.user.id // Estrai l'ID utente da req.user
+        const { oldPassword, newPassword } = req.body
 
         // checks for required parameters
         if (!userId || !newPassword || !oldPassword) {
             return res.status(400).json({ msg: "Missing required parameters" })
         }
 
-        const user = await db.oneOrNone("SELECT * FROM users WHERE id=$1", [userId])
+        const user = await db.oneOrNone("SELECT password FROM users WHERE id=$1", [userId])
         // checks that the user exists
         if (!user) {
             return res.status(400).json({ msg: "User not found" })
@@ -266,6 +267,22 @@ const sendVerificationEmail = (email, token) => {
     })
 }
 
+const sendResetPassEmail = (email, token) => {
+    const mailOptions = {
+        from: "ilyas.macaluso@gmail.com",
+        to: email,
+        subject: "RecipeRoulette: Reset password",
+        text: `Click the link to reset your password: http://localhost:5173/reset-password?token=${token}`,
+    }
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.error("Errore nell'invio dell'email:", error)
+        } else {
+            console.log("Email inviata:", info.response)
+        }
+    })
+}
+
 const verifyEmail = async (req, res) => {
     try {
         const { token } = req.query
@@ -301,4 +318,53 @@ const verifyEmail = async (req, res) => {
     }
 }
 
-export { getUser, signup, login, logout, changePassword, updateUserData, verifyToken, verifyEmail }
+const forgotPassword = async (req, res) => {
+    try {
+        const { emailOrUsername } = req.body
+        console.log(emailOrUsername)
+
+        if (!emailOrUsername) {
+            return
+        }
+
+        const user = await db.oneOrNone("SELECT id, email, username FROM users WHERE email = $1 OR username = $1", [emailOrUsername])
+
+        if (!user) {
+            return res.status(404).json({ msg: "Email sent successfully" }) // users should not know which emails or usernames are in the database
+        }
+
+        const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "1h" })
+        sendResetPassEmail(user.email, token)
+        return res.status(201).json({ msg: "Email sent successfully" })
+    } catch (error) {
+        return res.status(500).json({ msg: error.message || "Internal server error" })
+    }
+}
+
+const resetPassword = async (req, res) => {
+    try {
+        const userId = req.user.id // Estrai l'ID utente da req.user
+        const { password } = req.body
+
+        // checks for required parameters
+        if (!userId || !password) {
+            return res.status(400).json({ msg: "Missing required parameters" })
+        }
+
+        const user = await db.oneOrNone("SELECT id FROM users WHERE id=$1", [userId])
+
+        // checks that the user exists
+        if (!user) {
+            return res.status(400).json({ msg: "User not found" })
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10)
+        await db.none("UPDATE users SET password=$2 WHERE id=$1", [userId, hashedPassword]) // update pass
+        return res.status(201).json({ msg: "Your password was successfully updated" })
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ msg: error.message || "Internal server error" })
+    }
+}
+
+export { getUser, signup, login, logout, changePassword, updateUserData, verifyToken, verifyEmail, forgotPassword, resetPassword }

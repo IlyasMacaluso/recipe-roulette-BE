@@ -1,5 +1,4 @@
 import passport from "passport"
-import { verifyToken } from "../controllers/users-controllers.mjs"
 
 const authorize = (req, res, next) => {
     // Estrai il token dall'header o dalla query string
