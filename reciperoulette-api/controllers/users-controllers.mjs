@@ -82,8 +82,8 @@ const signup = async (req, res) => {
             [user.id]
         )
 
-        // assegno un token e lo imposto per l'utente registrato
-        const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "7d" })
+        // assegno un token e lo imposto per l'utente registrato, la durata è di un giorno, per verificare l'email
+        const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "1d" })
         await db.none(`UPDATE users SET token=$2 WHERE username=$1`, [username, token])
 
         let base64Image
@@ -123,7 +123,7 @@ const login = async (req, res) => {
         }
 
         if (!user.is_verified) {
-            return res.status(400).json({ msg: "User email not verified, please verify your email." })
+            return res.status(400).json({ msg: "User email not verified, please verify your email.", is_verified: user.is_verified })
         }
 
         const validCredentials = await bcrypt.compare(password, user.password)
@@ -256,7 +256,7 @@ const sendVerificationEmail = (email, token) => {
         from: "ilyas.macaluso@gmail.com",
         to: email,
         subject: "RecipeRoulette: Verify your email",
-        text: `Click the link to verify your email: http://localhost:3000/api/users/verify-email?token=${token}`,
+        text: `Click the link to verify your email: http://localhost:5173/verify-email?token=${token}`,
     }
     transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
@@ -285,7 +285,8 @@ const sendResetPassEmail = (email, token) => {
 
 const verifyEmail = async (req, res) => {
     try {
-        const { token } = req.query
+        const token = req.headers["authorization"]?.split(" ")[1] || req.query.token
+        console.log(token)
 
         if (!token) {
             return res.status(400).send("Missing Token.")
@@ -312,29 +313,36 @@ const verifyEmail = async (req, res) => {
         // Aggiorna il flag isVerified
         await db.none("UPDATE users SET is_verified=$1 WHERE id=$2", [true, userId])
 
-        return res.status(200).json({ msg: "Email successfully verified!" })
+        return res.status(201).json({ msg: "Email successfully verified!" })
     } catch (error) {
         return res.status(500).json({ msg: error.message || "Internal server error." })
     }
 }
 
-const forgotPassword = async (req, res) => {
+const createSecureLink = async (req, res) => {
     try {
-        const { emailOrUsername } = req.body
-        console.log(emailOrUsername)
+        const { userInformation } = req.body
+        console.log(userInformation)
 
-        if (!emailOrUsername) {
+        if (!userInformation) {
             return
         }
 
-        const user = await db.oneOrNone("SELECT id, email, username FROM users WHERE email = $1 OR username = $1", [emailOrUsername])
+        const user = await db.oneOrNone("SELECT id, email, username, is_verified FROM users WHERE email = $1 OR username = $1", [
+            userInformation,
+        ])
 
         if (!user) {
             return res.status(404).json({ msg: "Email sent successfully" }) // users should not know which emails or usernames are in the database
         }
 
         const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: "1h" })
-        sendResetPassEmail(user.email, token)
+
+        if (!user.is_verified) {
+            sendVerificationEmail(user.email, token)
+        } else {
+            sendResetPassEmail(user.email, token)
+        }
         return res.status(201).json({ msg: "Email sent successfully" })
     } catch (error) {
         return res.status(500).json({ msg: error.message || "Internal server error" })
@@ -367,4 +375,4 @@ const resetPassword = async (req, res) => {
     }
 }
 
-export { getUser, signup, login, logout, changePassword, updateUserData, verifyToken, verifyEmail, forgotPassword, resetPassword }
+export { getUser, signup, login, logout, changePassword, updateUserData, verifyToken, verifyEmail, createSecureLink, resetPassword }

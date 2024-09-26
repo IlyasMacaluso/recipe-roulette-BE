@@ -19,7 +19,7 @@ import {
     verifyToken,
     verifyEmail,
     resetPassword,
-    forgotPassword
+    createSecureLink
 } from "./controllers/users-controllers.mjs"
 
 import {
@@ -51,9 +51,9 @@ app.use(compression({ threshold: 1000 }))
 
 //users routes
 app.get("/api/users/get-user/:userId", getUser)
-app.get("/api/users/verify-email", authorize, verifyEmail)
 
-app.post("/api/users/forgot-password", forgotPassword)
+app.post("/api/users/verify-email", authorize, verifyEmail)
+app.post("/api/users/create-secure-link", createSecureLink)
 app.post("/api/users/reset-password", authorize, resetPassword)
 
 app.post("/api/users/verify-token", verifyToken)
