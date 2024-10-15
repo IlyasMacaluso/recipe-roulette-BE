@@ -88,8 +88,6 @@ const updateUserRecipes = async (req, res) => {
             return res.status(400).json({ msg: "No such user" })
         }
 
-        console.log(recipe)
-
         // begin the transaction if we have all the required parameters
         await db.tx(async (t) => {
             const isRecipeStored = await t.oneOrNone(`SELECT title FROM history WHERE user_id=$1 AND recipe_id=$2`, [
@@ -210,49 +208,5 @@ const getFavorites = async (req, res) => {
         res.status(500).json({ msg: "Internal server error" })
     }
 }
-
-// const updateRecipesHistory = async (req, res) => {
-//     try {
-//         const { recipe, userId } = req.body
-
-//         if (!userId || !recipe) {
-//             return res.status(400).json({ msg: "Missing required parameters" })
-//         }
-
-//         const user = await db.oneOrNone(`SELECT username FROM users WHERE id=$1`, [userId])
-//         if (!user) {
-//             return res.status(400).json({ msg: "User not found" })
-//         }
-
-//         await db.tx(async (t) => {
-//             const result = await t.oneOrNone(`SELECT recipes_history FROM preferences WHERE user_id=$1 FOR UPDATE`, [userId])
-
-//             let { recipes_history } = result || { recipes_history: [] }
-//             const alreadyInHistory = recipes_history.some((rec) => `${rec.id}_${rec.title}` === `${recipe.recipe_id}_${recipe.title}`)
-
-//             let newHistory
-//             if (!alreadyInHistory) {
-//                 newHistory = [recipe, ...recipes_history]
-//             } else {
-//                 if (alreadyInHistory.isFavorited !== recipe.isFavorited) {
-//                     newHistory = recipes_history.map((rec) =>
-//                         `${rec.id}_${rec.title}` === `${recipe.recipe_id}_${recipe.title}` ? { ...rec, isFavorited: recipe.isFavorited } : rec
-//                     )
-//                 } else {
-//                     newHistory = recipes_history.filter((rec) => `${rec.id}_${rec.title}` !== `${recipe.recipe_id}_${recipe.title}`)
-//                     newHistory = [recipe, ...newHistory]
-//                 }
-//             }
-
-//             const jsonNewHistory = JSON.stringify(newHistory)
-//             await t.none(`UPDATE preferences SET recipes_history = $2::jsonb WHERE user_id=$1`, [userId, jsonNewHistory])
-//         })
-
-//         return res.status(201).json({ msg: "History updated" })
-//     } catch (error) {
-//         console.error("Error in favorited_recipes:", error)
-//         return res.status(500).json({ msg: "Internal server error" })
-//     }
-// }
 
 export { getFoodPref, updateFoodPref, getBlacklist, updateBlacklist, getFavorites, getHistory, updateUserRecipes }

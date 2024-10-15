@@ -77,20 +77,17 @@ app.get("/api/preferences/get-recipes-history/:userId", getHistory)
 
 app.post("/api/preferences/update-user-recipes", updateUserRecipes)
 
-// app.post("/api/preferences/set-favorited-recipes", updateUserRecipes)
-// app.post("/api/preferences/update-recipes-history", updateUserRecipes)
-
 //ai request route
 app.post("/api/generate-recipes", generateRecipe)
 
-// app.use((err, res, next) => {
-//     if (err) {
-//         console.log(err)
-//         res.status(err.statusCode || 500).json({ msg: err.statusMessage || "Internal Server Error" })
-//     } else {
-//         next()
-//     }
-// })
+app.use((err, res, next) => {
+    if (err) {
+        console.log(err)
+        res.status(err.statusCode || 500).json({ msg: err.statusMessage || "Internal Server Error" })
+    } else {
+        next()
+    }
+})
 
 app.listen(3000, () => {
     console.log(`Server running at http://localhost:${port}`)
