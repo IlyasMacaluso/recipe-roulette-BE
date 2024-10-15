@@ -27,10 +27,9 @@ import {
     updateFoodPref,
     getBlacklist,
     updateBlacklist,
-    getFavoriteRecipes,
-    updateFavoriteRecipes,
-    getRecipesHistory,
-    updateRecipesHistory,
+    getFavorites,
+    getHistory,
+    updateUserRecipes
 } from "./controllers/preferences-controller.mjs"
 
 const app = express()
@@ -67,18 +66,19 @@ app.post("/api/users/change-user-data", authorize, updateUserData)
 app.get("/api/ingredients/get-ingredients", getIngredients)
 
 //preferences routes
-
 app.get("/api/preferences/get-preferences/:userId", getFoodPref)
 app.post("/api/preferences/set-preferences", updateFoodPref)
 
 app.get("/api/preferences/get-blacklisted-ingredients/:userId", getBlacklist)
 app.post("/api/preferences/set-blacklisted-ingredients", updateBlacklist)
 
-app.get("/api/preferences/get-favorited-recipes/:userId", getFavoriteRecipes)
-app.post("/api/preferences/set-favorited-recipes", updateFavoriteRecipes)
+app.get("/api/preferences/get-favorited-recipes/:userId", getFavorites)
+app.get("/api/preferences/get-recipes-history/:userId", getHistory)
 
-app.get("/api/preferences/get-recipes-history/:userId", getRecipesHistory)
-app.post("/api/preferences/update-recipes-history", updateRecipesHistory)
+app.post("/api/preferences/update-user-recipes", updateUserRecipes)
+
+// app.post("/api/preferences/set-favorited-recipes", updateUserRecipes)
+// app.post("/api/preferences/update-recipes-history", updateUserRecipes)
 
 //ai request route
 app.post("/api/generate-recipes", generateRecipe)

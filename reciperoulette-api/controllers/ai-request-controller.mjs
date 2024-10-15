@@ -10,23 +10,23 @@ const openai = new OpenAI({
 const generateRecipe = async (req, res) => {
   const {
     ingredients,
-    prepTime,
-    caloricApport,
-    cuisineEthnicity,
+    prep_time,
+    caloric_apport,
+    cuisine_ethnicity,
     preferences,
     difficulty,
   } = req.body;
 
   if (
     !ingredients ||
-    !prepTime ||
-    !caloricApport ||
-    !cuisineEthnicity ||
+    !prep_time ||
+    !caloric_apport ||
+    !cuisine_ethnicity ||
     !difficulty
   ) {
     return res
       .status(400)
-      .json({ error: "Some required parameters are missing" });
+      .json({ error: "Missing required parameters" });
   }
 
   try {
@@ -34,31 +34,31 @@ const generateRecipe = async (req, res) => {
       messages: [
         {
           role: "system",
-          content: `you are a helpful assistant designed to output JSON`,
+          content: `you are a helpful assistant designed to output JSON of fancy recipes`,
         },
         {
           role: "user",
           content: `make an array of objects containing meals I can prepare with:
                     -all of these ingredients: ${ingredients},
-                    -a maximum preparation time of ${prepTime} minutes,
-                    -with a meximum of ${caloricApport} calories,
+                    -a maximum preparation time of ${prep_time} minutes,
+                    -with a meximum of ${caloric_apport} calories,
                     -follow these preferences ${preferences},
                     -the max preparation difficulty level should be ${difficulty}
-                    -each meals should be inspired by one of these cuisines ${cuisineEthnicity}.
+                    -each meals should be inspired by one of these cuisines ${cuisine_ethnicity}.
                     -assume that all ingredients are not cooked yet,
                     -quantities should be for 4 servings,
                     -The objects should have this props and format:
                         {
-                            id: n, //8 digit number: MUST be RANDOMLY generated!
+                            recipe_id: n, //8 digit number: MUST be RANDOMLY generated!
                             title: "Greek Spanakopita (Spinach Pie)",
                             attributes: [ /*first latter upper case*/
                                 "Easy", // difficulty
                                 "Appetizer", // type of dish
                                 "60m", //prep time
-                                "4 servings", // n of servings
+                                "4 Servings",
                             ],
                             ingredients: ["spinach", "onion" /*other ingredients...*/],
-                            ingQuantities: [
+                            ing_quantities: [
                                 "500g fresh spinach, chopped",
                                 "200g onion, chopped",
                                 //other ingredient quantities...
@@ -68,13 +68,13 @@ const generateRecipe = async (req, res) => {
                                 ["step 2 title", "detailed sub step 1", "other steps"],
                                 //other arrays of steps and substeps
                             ],
-                            isFavorited: false,
-                            is_gluten_free: false,
-                            is_vegetarian: true,
-                            is_vegan: false,
-                            cuisineEthnicity: "Greek",
-                            caloricApport: 280,
-                            preparationTime: 60,
+                            is_favorited: false,
+                            is_gluten_free: bool,
+                            is_vegetarian: bool,
+                            is_vegan: bool,
+                            cuisine_ethnicity: "Greek",
+                            caloric_apport: 280,
+                            preparation_time: 60,
                             difficulty: easy // hard /medium /easy
                         }
                     `,
@@ -83,6 +83,8 @@ const generateRecipe = async (req, res) => {
       model: "gpt-4o",
       response_format: { type: "json_object" },
     });
+    console.log(completion.choices[0].message.content);
+    
     return res.json(completion.choices[0].message.content);
   } catch (error) {
     console.error(error);

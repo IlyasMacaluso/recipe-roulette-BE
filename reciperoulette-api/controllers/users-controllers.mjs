@@ -71,11 +71,11 @@ const signup = async (req, res) => {
         //creo il nuovo utente utilizzando i dati ricevuti
         const user = await db.one(`INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *;`, [
             username.toLowerCase(),
-            email,
+            email.toLowerCase(),
             hashedPassword,
         ])
 
-        //assegno una riga di preferences, favorited, e inizializzo le colonne
+        //assegno una riga di preferences al nuovo utente
         await db.none(
             `INSERT INTO preferences (user_id, recipes_history, blacklisted_ingredients, favorited_recipes) 
                 VALUES ($1,json_build_array(), json_build_array(), json_build_array());`,
@@ -322,14 +322,14 @@ const verifyEmail = async (req, res) => {
 const createSecureLink = async (req, res) => {
     try {
         const { userInformation } = req.body
-        console.log(userInformation)
+        const lowerCaseUserInformation = userInformation ? userInformation.toLowerCase() : null;
 
-        if (!userInformation) {
+        if (!lowerCaseUserInformation) {
             return
         }
 
         const user = await db.oneOrNone("SELECT id, email, username, is_verified FROM users WHERE email = $1 OR username = $1", [
-            userInformation,
+            lowerCaseUserInformation,
         ])
 
         if (!user) {
